@@ -74,7 +74,7 @@ def draw_train(screen, train):
     pygame.draw.circle(screen, train.color, (int(x), int(y)), TRAIN_SIZE)
     pygame.draw.circle(screen, BLACK, (int(x), int(y)), TRAIN_SIZE, 2)
 
-def draw_info_panel(screen, train1, train2, font):
+def draw_info_panel(screen, train1, train2, train3, font):
     """Draw information panel showing speeds and relative speeds"""
     info_y = 50
     line_height = 30
@@ -96,20 +96,41 @@ def draw_info_panel(screen, train1, train2, font):
         f"Laps: {train2.laps}",
         f"Position: {train2.angle:.1f}°"
     ]
+
+    # Train 3 info
+    train3_info = [
+        f"Green Train: {train3.speed:.1f}°/frame",
+        f"Laps: {train3.laps}",
+        f"Position: {train3.angle:.1f}°"
+    ]
     
     # Relative speed info
-    relative_speed = train1.get_relative_speed_to(train2)
+
+    relative_speed_12 = train1.get_relative_speed_to(train2)
+    relative_speed_13 = train1.get_relative_speed_to(train3)
+    relative_speed_23 = train2.get_relative_speed_to(train3)
     relative_info = [
-        f"Relative Speed (Red vs Blue): {relative_speed:.1f}°/frame",
-        f"Red is {'faster' if relative_speed > 0 else 'slower' if relative_speed < 0 else 'same speed'} than Blue"
+        f"Relative Speed (Red vs Blue): {relative_speed_12:.1f}°/frame",
+        f"Red is {'faster' if relative_speed_12 > 0 else 'slower' if relative_speed_12 < 0 else 'same speed'} than Blue",
+        f"Relative Speed (Red vs Green): {relative_speed_13:.1f}°/frame",
+        f"Red is {'faster' if relative_speed_13 > 0 else 'slower' if relative_speed_13 < 0 else 'same speed'} than Green",
+        f"Relative Speed (Blue vs Green): {relative_speed_23:.1f}°/frame",
+        f"Blue is {'faster' if relative_speed_23 > 0 else 'slower' if relative_speed_23 < 0 else 'same speed'} than Green"
     ]
     
     # Draw all info
-    all_info = train1_info + [""] + train2_info + [""] + relative_info
+    all_info = train1_info + [""] + train2_info + [""] + train3_info + [""] + relative_info
     
     for i, text in enumerate(all_info):
-        if text:  # Skip empty strings
-            color = RED if i < 3 else BLUE if i < 7 else GREEN
+        if text:
+            if i < 3:
+                color = RED
+            elif i < 7:
+                color = BLUE
+            elif i < 11:
+                color = GREEN
+            else:
+                color = WHITE
             info_text = font.render(text, True, color)
             screen.blit(info_text, (20, info_y + i * line_height))
 
@@ -118,7 +139,8 @@ def draw_controls(screen, font):
     controls = [
         "Controls:",
         "1/2 - Adjust Red Train Speed",
-        "3/4 - Adjust Blue Train Speed", 
+        "3/4 - Adjust Blue Train Speed",
+        "5/6 - Adjust Green Train Speed",
         "R - Reset Race",
         "ESC - Quit"
     ]
@@ -137,7 +159,8 @@ def main():
     
     # Create trains with different speeds
     train1 = Train(RED, "Red Express", 2.0, 0)      # 2 degrees per frame
-    train2 = Train(BLUE, "Blue Lightning", 1.5, 180) # 1.5 degrees per frame, starting opposite
+    train2 = Train(BLUE, "Blue Lightning", 1.5, 120) # 1.5 degrees per frame
+    train3 = Train(GREEN, "Green Arrow", 1.0, 240)   # 1.0 degrees per frame
     
     running = True
     paused = False
@@ -157,11 +180,17 @@ def main():
                     train2.speed = max(0.1, train2.speed - 0.1)
                 elif event.key == pygame.K_4:  # Increase blue train speed
                     train2.speed = min(5.0, train2.speed + 0.1)
+                elif event.key == pygame.K_5:  # Decrease green train speed
+                    train3.speed = max(0.1, train3.speed - 0.1)
+                elif event.key == pygame.K_6:  # Increase green train speed
+                    train3.speed = min(5.0, train3.speed + 0.1)
                 elif event.key == pygame.K_r:  # Reset race
                     train1.angle = 0
                     train1.laps = 0
-                    train2.angle = 180
+                    train2.angle = 120
                     train2.laps = 0
+                    train3.angle = 240
+                    train3.laps = 0
                 elif event.key == pygame.K_SPACE:  # Pause/unpause
                     paused = not paused
         
@@ -169,6 +198,7 @@ def main():
             # Update train positions
             train1.update()
             train2.update()
+            train3.update()
         
         # Clear screen
         screen.fill(BLACK)
@@ -177,7 +207,8 @@ def main():
         draw_track(screen)
         draw_train(screen, train1)
         draw_train(screen, train2)
-        draw_info_panel(screen, train1, train2, font)
+        draw_train(screen, train3)
+        draw_info_panel(screen, train1, train2, train3, font)
         draw_controls(screen, font)
         
         # Show pause indicator
